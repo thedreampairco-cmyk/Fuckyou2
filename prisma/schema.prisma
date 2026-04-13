@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                 String          @id @default(uuid())
+  email              String          @unique
+  password           String
+  displayName        String?
+  balance            Int             @default(0)
+  role               String          @default("user")
+  apiKey             String          @unique @default(uuid())
+  currencyPreference String          @default("INR")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  orders             Order[]
+  tickets            SupportTicket[]
+  transactions       Transaction[]
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  services  Service[]
+}
+
+model Service {
+  id                String    @id @default(uuid())
+  name              String
+  categoryId        String
+  rate              Int
+  min               Int
+  max               Int
+  description       String?
+  active            Boolean   @default(true)
+  dripFeedEnabled   Boolean   @default(false)
+  upstreamServiceId String?
+  providerId        String?
+  createdAt         DateTime  @default(now())
+  orders            Order[]
+  provider          Provider? @relation(fields: [providerId], references: [id])
+  category          Category  @relation(fields: [categoryId], references: [id])
+}
+
+model Provider {
+  id        String    @id @default(uuid())
+  name      String
+  apiUrl    String
+  apiKey    String
+  createdAt DateTime  @default(now())
+  services  Service[]
+}
+
+model Order {
+  id              String   @id @default(uuid())
+  userId          String
+  serviceId       String
+  link            String
+  quantity        Int
+  charge          Int
+  status          String   @default("pending")
+  upstreamOrderId String?
+  isDripFeed      Boolean  @default(false)
+  runs            Int?
+  interval        Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  service         Service  @relation(fields: [serviceId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Int
+  type      String
+  method    String?
+  status    String   @default("pending")
+  utr       String?  @unique
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model SupportTicket {
+  id        String   @id @default(uuid())
+  userId    String
+  subject   String
+  message   String
+  status    String   @default("open")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
